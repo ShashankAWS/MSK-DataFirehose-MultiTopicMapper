@@ -7,6 +7,16 @@ You can either provide a list of topics or a regular expression and this script 
 ### Architecture
 ![architecture_diagram](Images/DataFlow.png)
 
+### Pre-requisites
+
+Install the following and any other necessary packages.
+
+```
+pip install confluent_kafka
+pip install boto3
+pip install aws-msk-iam-sasl-signer-python
+```
+
 ### Running the script 
 
 Script accepts the following system arguments :
