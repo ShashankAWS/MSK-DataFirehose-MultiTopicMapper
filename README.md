@@ -1,6 +1,5 @@
 # Process multiple Amazon MSK topics via one to one mapping with Amazon Data Firehose
 
----
 This repository provides you with the sample workflow and code on how to create one to one mapping between your Amazon MSK topics and Amazon Data Firehose. Amazon Data Firehose can then deliver the data to the S3 or your configured destination in near real time. 
 
 You can either provide a list of topics or a regular expression and this script will create a Data Firehose stream for each of the matching topics residing in your MSK cluster.
