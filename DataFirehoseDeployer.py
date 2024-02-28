@@ -20,13 +20,21 @@ def oauth_cb(oauth_config):
 
 
 def create_policy(msk_cluster_arn, s3_bucket):
+    """
+    :param msk_cluster_arn: Provide the MSK cluster ARN
+    :param s3_bucket: The S3 bucket that Amazon Data Firehose will use to deliver records
+    :return: This Function returns the IAM policy ARN.
+    """
 
+    # Here converting the provided Cluster ARN to topic and group ARNs, these ARNs will be used in the IAM policy.
     msk_topic_arn = msk_cluster_arn.replace("cluster", "topic", 1) + "/*"
     msk_group_arn = msk_cluster_arn.replace("cluster", "group", 1) + "/*"
 
+    # Creating the Logs group ARN
     new = msk_cluster_arn.replace("kafka", "logs", 1)
     log_arn = new.replace(str(msk_cluster_arn.split(':')[-1]), "log-group:/aws/DataFirehose/*")
 
+    # IAM policy which will be attached to the Role assumed by Data Firehose
     policy_doc = {
         "Version": "2012-10-17",
         "Statement": [
@@ -86,6 +94,7 @@ def create_policy(msk_cluster_arn, s3_bucket):
         ]
     }
 
+    # Create IAM policy
     try:
         policy = iam_client.create_policy(
             PolicyName="MSK-to-DataFirehose",
@@ -100,8 +109,8 @@ def create_policy(msk_cluster_arn, s3_bucket):
         return policy["Policy"]["Arn"]
 
 
+# Attaching the IAM policy to the IAM Role
 def attach_to_role(role_name, policy_arn):
-
     try:
         response = iam_client.attach_role_policy(
             PolicyArn=policy_arn,
@@ -114,6 +123,7 @@ def attach_to_role(role_name, policy_arn):
         raise
 
 
+# Creating the IAM Role, this role will be assumed by Amazon Data Firehose.
 def create_role(role_name):
     trust_policy = {
         "Version": "2012-10-17",
@@ -136,11 +146,22 @@ def create_role(role_name):
     else:
         return role["Role"]["Arn"]
 
-# Funtion to create Amazon Data Firehose for all the topics.
+
+# Create Amazon Data Firehose for all the topics.
 def create_delivery_streams(topic_list, role_arn, bucket, msk_cluster_arn, connectivity):
+
+    """
+    :param topic_list: List of topics to iterate
+    :param role_arn: Role ARN to be assumed by Data Firehose
+    :param bucket: S3 Bucket to which Firehose will deliver the data.
+    :param msk_cluster_arn: MSK cluster ARN
+    :param connectivity: Define Data Firehose Connectivity to MSK (Public/Private)
+    """
+
     for topic_iter in topic_list:
         logging.info("Creating Firehose for topic : " + str(topic_iter))
         result = firehose_client.create_delivery_stream(
+            # appending the Firehose name with topic name, creating prefix for each topic in the provided S3 bucket
             DeliveryStreamName='Firehose-' + str(topic_iter),
             DeliveryStreamType='MSKAsSource',
             ExtendedS3DestinationConfiguration={
@@ -174,8 +195,11 @@ def create_delivery_streams(topic_list, role_arn, bucket, msk_cluster_arn, conne
 
 
 def list_topics(pattern_in):
-
-    # Get the list of topics from MSK and return the topics matching with Regex
+    """
+    Get the list of topics from MSK and return the topics matching with Regex
+    :param pattern_in: RegEx provided by the user
+    :return: Returns the list of matching topics.
+    """
 
     logging.info('Pattern provided :' + pattern_in)
     admin_client = AdminClient(config)
@@ -206,7 +230,7 @@ if __name__ == '__main__':
     cluster_arn = sys.argv[2]
     connectivity = sys.argv[3]
     bucket = sys.argv[4]
-    option = sys.argv[5]         # 1 for Regex, 2 for topic list
+    option = sys.argv[5]  # 1 for Regex, 2 for topic list
     topics_in = sys.argv[6:]
 
     # MSK Admin client configuration
@@ -219,7 +243,8 @@ if __name__ == '__main__':
         'oauth_cb': oauth_cb
     }
 
-    if len(sys.argv) < 5:
+    # check if required number of arguments are passed while executing the script
+    if len(sys.argv) < 6:
         sys.stderr.write(
             'Usage: %s <bootstrap-brokers> <MSK Cluster ARN> <Cluster Connectivity (Public/Private)> <S3 Bucket Name> '
             '<options: 1 for regex, 2 for topic list> <Regex/topic list>\n\n' %
@@ -241,8 +266,10 @@ if __name__ == '__main__':
 
     logging.info("Topics Found/Matched: " + str(topics))
 
+    # if matching topics found, proceed creating the IAM Role and Firehose Delivery streams
     if len(topics) > 0:
-        inp = input(str(len(topics)) + " matching topics found, confirm creating " + str(len(topics)) + " delivery streams ? (Y to confirm) : ")
+        inp = input(str(len(topics)) + " matching topics found, confirm creating " + str(
+            len(topics)) + " delivery streams ? (Y to confirm) : ")
         if inp == ('y' or 'Y'):
             firehose_policy_arn = create_policy(cluster_arn, bucket)
             print(firehose_policy_arn)
