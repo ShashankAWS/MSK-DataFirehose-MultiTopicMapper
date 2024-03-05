@@ -27,7 +27,7 @@ Script accepts the following system arguments :
 ```
 1. bootstrap-brokers : If you are providing private bootstrap brokers then run this script form within the VPC.
 2. MSK Cluster ARN
-3. Cluster Connectivity (PUBLIC/PRIVATE) : Amazon Data Firehose can connect to your MSK cluster Privately or Publicly, mention the appropriate connectivity option.
+3. Cluster Connectivity (PUBLIC/PRIVATE) : amazon Data Firehose can connect to your MSK cluster Privately or Publicly, mention the appropriate connectivity option.
 4. S3 Bucket Name : S3 bucket name to which you want to deliver the Data, the script will automatically create prefixes for each topic inside this bucket.
 5. options: 1 for regex, 2 for topic list : Use 1 if you are providing a regular expression, in this mode, script will find all the topics matching the RegEx, Use 2 if you are providing a list of topics, in this case script does not verify the topics in MSK.
 6. RegEx/topic list : Provide either the RegEx or topic list (space seperated).
